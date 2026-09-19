@@ -39,23 +39,46 @@ function sleep(ms: number) {
 }
 
 /**
- * Jikan enforces ~3 req/sec & 60 req/min. A single retry with backoff on 429
- * keeps the UI resilient without hammering the API.
+ * Jikan enforces ~3 req/sec & 60 req/min. Pages like the homepage fire
+ * several Jikan calls concurrently (Promise.all), which would otherwise
+ * burst past that limit on every cold cache. This serializes every call
+ * through this module onto a shared queue spaced ~3/sec apart, so a page
+ * requesting six resources at once queues them instead of racing Jikan.
+ */
+let throttleChain: Promise<void> = Promise.resolve();
+let lastRequestStartedAt = 0;
+const MIN_REQUEST_INTERVAL_MS = 350;
+
+function throttledSlot(): Promise<void> {
+  const slot = throttleChain.then(async () => {
+    const wait = Math.max(0, lastRequestStartedAt + MIN_REQUEST_INTERVAL_MS - Date.now());
+    if (wait > 0) await sleep(wait);
+    lastRequestStartedAt = Date.now();
+  });
+  // Keep the chain alive even if a caller's request later throws.
+  throttleChain = slot.catch(() => {});
+  return slot;
+}
+
+/**
+ * A single retry-with-backoff on 429 keeps the UI resilient without
+ * hammering the API further once it does happen.
  */
 async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDATE): Promise<T> {
   const url = `${BASE_URL}${path}`;
-  const maxAttempts = 3;
+  const maxAttempts = 4;
 
   let lastError: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
+      await throttledSlot();
       const res = await fetch(url, {
         next: { revalidate },
       });
 
       if (res.status === 429) {
         lastError = new JikanApiError("Rate limited by Jikan API", 429);
-        await sleep(500 * (attempt + 1));
+        await sleep(700 * (attempt + 1));
         continue;
       }
 

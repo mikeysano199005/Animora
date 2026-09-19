@@ -21,6 +21,7 @@ import { formatCompactNumber, formatDate, formatEpisodes, formatScore } from "@/
 import { ErrorState } from "@/components/ui/ErrorState";
 
 export const revalidate = 3600;
+export const maxDuration = 30;
 
 async function safe<T>(promise: Promise<T>, fallback: T): Promise<T> {
   try {

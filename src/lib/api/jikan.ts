@@ -47,7 +47,16 @@ function sleep(ms: number) {
  */
 let throttleChain: Promise<void> = Promise.resolve();
 let lastRequestStartedAt = 0;
-const MIN_REQUEST_INTERVAL_MS = 350;
+const MIN_REQUEST_INTERVAL_MS = 550;
+
+function jitter(base: number): number {
+  return base + Math.floor(Math.random() * base * 0.5);
+}
+
+// Caps how many multiples of the base backoff a retry can wait, so total
+// worst-case retry time for a single call stays well inside a serverless
+// function's max duration even with several retries.
+const MAX_BACKOFF_MULTIPLIER = 4;
 
 function throttledSlot(): Promise<void> {
   const slot = throttleChain.then(async () => {
@@ -66,7 +75,7 @@ function throttledSlot(): Promise<void> {
  */
 async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDATE): Promise<T> {
   const url = `${BASE_URL}${path}`;
-  const maxAttempts = 4;
+  const maxAttempts = 6;
 
   let lastError: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -79,7 +88,7 @@ async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDA
       if (res.status === 429) {
         lastError = new JikanApiError("Rate limited by Jikan API", 429);
         console.error(`[jikan] 429 rate limited on attempt ${attempt + 1}/${maxAttempts}: ${url}`);
-        await sleep(700 * (attempt + 1));
+        await sleep(jitter(500 * Math.min(attempt + 1, MAX_BACKOFF_MULTIPLIER)));
         continue;
       }
 
@@ -105,7 +114,7 @@ async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDA
       }
       lastError = err;
       if (attempt < maxAttempts - 1) {
-        await sleep(400 * (attempt + 1));
+        await sleep(jitter(400 * Math.min(attempt + 1, MAX_BACKOFF_MULTIPLIER)));
       }
     }
   }

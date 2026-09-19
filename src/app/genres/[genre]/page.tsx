@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { capitalize, slugifyGenre } from "@/lib/utils/format";
 
 export const revalidate = 1800;
+export const maxDuration = 30;
 
 interface GenrePageParams {
   genre: string;

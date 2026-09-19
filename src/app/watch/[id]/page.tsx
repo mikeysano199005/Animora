@@ -10,6 +10,7 @@ import { JikanApiError, getAnimeById } from "@/lib/api/jikan";
 import type { AnimeFull } from "@/lib/types/anime";
 
 export const revalidate = 3600;
+export const maxDuration = 30;
 
 type LoadResult =
   | { status: "ok"; anime: AnimeFull }

@@ -4,6 +4,7 @@ import { GenreCard } from "@/components/GenreCard";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 export const revalidate = 43200;
+export const maxDuration = 30;
 
 export const metadata: Metadata = {
   title: "Genres",

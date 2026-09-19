@@ -10,6 +10,7 @@ import { capitalize } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
 export const revalidate = 3600;
+export const maxDuration = 30;
 
 export const metadata: Metadata = {
   title: "Seasonal Anime",

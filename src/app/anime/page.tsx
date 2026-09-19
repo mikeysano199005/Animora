@@ -9,6 +9,8 @@ import { Pagination } from "@/components/Pagination";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageSkeleton } from "@/components/Skeletons/PageSkeleton";
 
+export const maxDuration = 30;
+
 export const metadata: Metadata = {
   title: "Browse Anime",
   description: "Browse the full anime catalog on ANIMORA. Filter by status, type and sort by popularity, score or release date.",

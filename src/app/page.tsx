@@ -17,6 +17,10 @@ import { toCardData, type AnimeCardData, type AnimeSummary } from "@/lib/types/a
 import { capitalize } from "@/lib/utils/format";
 
 export const revalidate = 1800;
+// Jikan's free tier can need several throttled retries on a cold cache;
+// give this route more room than the default serverless timeout so a slow
+// warm-up degrades gracefully instead of hard-timing-out mid-retry.
+export const maxDuration = 45;
 
 async function safe<T>(promise: Promise<T>, fallback: T): Promise<T> {
   try {
@@ -36,7 +40,9 @@ export default async function HomePage() {
     safe(getAnimeGenres(), []),
   ]);
 
-  const heroItems = (trending.data.length ? trending.data : season.data)
+  const heroItems = (
+    trending.data.length ? trending.data : season.data.length ? season.data : popular.data.length ? popular.data : topRated.data
+  )
     .filter((anime) => anime.images?.jpg?.large_image_url)
     .slice(0, 5);
 

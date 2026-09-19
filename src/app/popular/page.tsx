@@ -7,6 +7,7 @@ import { Pagination } from "@/components/Pagination";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 export const revalidate = 1800;
+export const maxDuration = 30;
 
 export const metadata: Metadata = {
   title: "Popular Anime",

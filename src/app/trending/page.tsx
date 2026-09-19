@@ -10,6 +10,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { formatEpisodes, formatScore } from "@/lib/utils/format";
 
 export const revalidate = 900;
+export const maxDuration = 30;
 
 export const metadata: Metadata = {
   title: "Trending Anime",

@@ -78,6 +78,7 @@ async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDA
 
       if (res.status === 429) {
         lastError = new JikanApiError("Rate limited by Jikan API", 429);
+        console.error(`[jikan] 429 rate limited on attempt ${attempt + 1}/${maxAttempts}: ${url}`);
         await sleep(700 * (attempt + 1));
         continue;
       }
@@ -87,6 +88,10 @@ async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDA
       }
 
       if (!res.ok) {
+        const bodySnippet = await res.text().then((t) => t.slice(0, 300)).catch(() => "");
+        console.error(
+          `[jikan] request failed: ${url} -> ${res.status} ${res.statusText}. Body: ${bodySnippet}`,
+        );
         throw new JikanApiError(`Jikan API request failed with status ${res.status}`, res.status);
       }
 
@@ -95,6 +100,9 @@ async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDA
       if (err instanceof JikanApiError && (err.status === 404 || err.status === 400)) {
         throw err;
       }
+      if (!(err instanceof JikanApiError)) {
+        console.error(`[jikan] fetch threw on attempt ${attempt + 1}/${maxAttempts} for ${url}:`, err);
+      }
       lastError = err;
       if (attempt < maxAttempts - 1) {
         await sleep(400 * (attempt + 1));
@@ -102,6 +110,7 @@ async function jikanFetch<T>(path: string, revalidate: number = DEFAULT_REVALIDA
     }
   }
 
+  console.error(`[jikan] giving up after ${maxAttempts} attempts: ${url}`, lastError);
   if (lastError instanceof JikanApiError) throw lastError;
   throw new JikanApiError("Anime information is temporarily unavailable.", 503);
 }
